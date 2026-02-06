@@ -116,7 +116,7 @@ class TestRepair:
         assert check_output.call_args_list == check_output_expected_args
         assert check_call.call_args_list == check_call_expected_args
 
-    def test_copylib_sets_origin_rpath_when_rpath_contains_nonexistent_directory(
+    def test_copylib_sets_origin_for_nonexistent_rpath(
         self,
         check_call,
         check_output,
