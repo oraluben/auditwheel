@@ -242,12 +242,7 @@ class TestElfReadRpaths:
 
         # THEN
         result = elf_read_rpaths(fake)
-        assert result == {
-            "rpaths": [],
-            "runpaths": [],
-            "has_rpath": False,
-            "has_runpath": False,
-        }
+        assert result == {"rpaths": [], "runpaths": []}
 
 
 @patch("auditwheel.elfutils.ELFFile")

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING
 
 from elftools.common.exceptions import ELFError
 from elftools.elf.elffile import ELFFile
@@ -10,13 +10,6 @@ from auditwheel.lddtree import parse_ld_paths
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
     from pathlib import Path
-
-
-class RPathInfo(TypedDict):
-    rpaths: list[str]
-    runpaths: list[str]
-    has_rpath: bool
-    has_runpath: bool
 
 
 def elf_read_dt_needed(fn: Path) -> list[str]:
@@ -113,13 +106,8 @@ def elf_is_python_extension(fn: Path, elf: ELFFile) -> tuple[bool, int | None]:
     return False, None
 
 
-def elf_read_rpaths(fn: Path) -> RPathInfo:
-    result: RPathInfo = {
-        "rpaths": [],
-        "runpaths": [],
-        "has_rpath": False,
-        "has_runpath": False,
-    }
+def elf_read_rpaths(fn: Path) -> dict[str, list[str]]:
+    result: dict[str, list[str]] = {"rpaths": [], "runpaths": []}
 
     with fn.open("rb") as f:
         elf = ELFFile(f)
@@ -129,7 +117,6 @@ def elf_read_rpaths(fn: Path) -> RPathInfo:
 
         for t in section.iter_tags():
             if t.entry.d_tag == "DT_RPATH":
-                result["has_rpath"] = bool(t.rpath)
                 result["rpaths"] = parse_ld_paths(
                     t.rpath,
                     root="/",
@@ -137,7 +124,6 @@ def elf_read_rpaths(fn: Path) -> RPathInfo:
                     keep_non_exist=True,
                 )
             elif t.entry.d_tag == "DT_RUNPATH":
-                result["has_runpath"] = bool(t.runpath)
                 result["runpaths"] = parse_ld_paths(
                     t.runpath,
                     root="/",

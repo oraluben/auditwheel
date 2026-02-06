@@ -116,11 +116,11 @@ class TestRepair:
         assert check_output.call_args_list == check_output_expected_args
         assert check_call.call_args_list == check_call_expected_args
 
-    def test_copylib_sets_rpath_when_rpath_tag_exists(
+    def test_copylib_sets_rpath_for_nonexistent_rpath(
         self,
         check_call,
-        _check_output,
-        _verify_patchelf,
+        check_output,
+        verify_patchelf,
         tmp_path,
     ):
         patcher = Patchelf()
@@ -130,16 +130,13 @@ class TestRepair:
         dest_dir.mkdir()
 
         with patch("auditwheel.repair.elf_read_rpaths") as elf_read_rpaths:
-            elf_read_rpaths.return_value = {
-                "rpaths": [],
-                "runpaths": [],
-                "has_rpath": True,
-                "has_runpath": False,
-            }
+            elf_read_rpaths.return_value = {"rpaths": ["/nonexistent"], "runpaths": []}
             new_soname, dest_path = copylib(src_path, dest_dir, patcher)
 
         assert dest_path.exists()
         assert dest_path == dest_dir / new_soname
+        verify_patchelf.assert_called_once()
+        check_output.assert_not_called()
         assert any(
             call_args.args[0][:4] == ["patchelf", "--force-rpath", "--set-rpath", "$ORIGIN"]
             for call_args in check_call.call_args_list
