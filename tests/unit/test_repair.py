@@ -120,7 +120,7 @@ class TestRepair:
         self,
         check_call,
         _check_output,
-        _,
+        _verify_patchelf,
         tmp_path,
     ):  # noqa: PT019
         patcher = Patchelf()
