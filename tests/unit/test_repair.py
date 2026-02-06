@@ -122,7 +122,7 @@ class TestRepair:
         _check_output,
         _verify_patchelf,
         tmp_path,
-    ):  # noqa: PT019 - patched args supplied by class decorators
+    ):  # noqa: PT019 - patched args are not pytest fixtures
         patcher = Patchelf()
         src_path = tmp_path / "libb.so"
         src_path.write_bytes(b"content")
@@ -136,8 +136,10 @@ class TestRepair:
                 "has_rpath": True,
                 "has_runpath": False,
             }
-            copylib(src_path, dest_dir, patcher)
+            new_soname, dest_path = copylib(src_path, dest_dir, patcher)
 
+        assert dest_path.exists()
+        assert dest_path == dest_dir / new_soname
         assert any(
             call_args.args[0][:4]
             == ["patchelf", "--force-rpath", "--set-rpath", "$ORIGIN"]
