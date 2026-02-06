@@ -116,13 +116,14 @@ class TestRepair:
         assert check_output.call_args_list == check_output_expected_args
         assert check_call.call_args_list == check_call_expected_args
 
-    def test_copylib_sets_rpath_for_nonexistent_directory(
+    def test_copylib_sets_origin_rpath_when_rpath_contains_nonexistent_directory(
         self,
         check_call,
         check_output,
         verify_patchelf,
         tmp_path,
     ):
+        # Mocks are injected by the class-level patch decorators.
         patcher = Patchelf()
         src_path = tmp_path / "libb.so"
         src_path.write_bytes(b"content")
