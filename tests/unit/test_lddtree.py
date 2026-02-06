@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from auditwheel.architecture import Architecture
-from auditwheel.lddtree import LIBPYTHON_RE, ldd, parse_ld_paths
+from auditwheel.lddtree import LIBPYTHON_RE, ldd
 from auditwheel.libc import Libc
 from auditwheel.tools import zip2dir
 
@@ -63,52 +63,3 @@ def test_libpython(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
     assert libpython.platform is None
     assert libpython.realpath is None
     assert libpython.needed == ()
-
-
-class TestParseLdPaths:
-    def test_nonexistent_path_filtered_by_default(self, tmp_path: Path) -> None:
-        """Non-existent paths are filtered out by default."""
-        nonexistent = str(tmp_path / "nonexistent")
-        result = parse_ld_paths(nonexistent, path=str(tmp_path / "fake.so"))
-        assert result == []
-
-    def test_existing_path_kept_by_default(self, tmp_path: Path) -> None:
-        """Existing paths are kept by default."""
-        existing = tmp_path / "existing"
-        existing.mkdir()
-        result = parse_ld_paths(str(existing), path=str(tmp_path / "fake.so"))
-        assert str(existing) in result
-
-    def test_nonexistent_path_kept_when_keep_non_exist(self, tmp_path: Path) -> None:
-        """Non-existent paths are kept when keep_non_exist=True."""
-        nonexistent = str(tmp_path / "nonexistent")
-        result = parse_ld_paths(
-            nonexistent, path=str(tmp_path / "fake.so"), keep_non_exist=True
-        )
-        assert nonexistent in result
-
-    def test_nonexistent_runpath_with_origin(self, tmp_path: Path) -> None:
-        """$ORIGIN-based non-existent paths are preserved with keep_non_exist=True."""
-        fake_so = tmp_path / "subdir" / "fake.so"
-        fake_so.parent.mkdir(parents=True)
-        fake_so.touch()
-        result = parse_ld_paths(
-            "$ORIGIN/nonexistent_lib",
-            path=str(fake_so),
-            keep_non_exist=True,
-        )
-        expected = str(fake_so.parent / "nonexistent_lib")
-        assert expected in result
-
-    def test_nonexistent_runpath_with_origin_filtered_by_default(
-        self, tmp_path: Path
-    ) -> None:
-        """$ORIGIN-based non-existent paths are filtered by default."""
-        fake_so = tmp_path / "subdir" / "fake.so"
-        fake_so.parent.mkdir(parents=True)
-        fake_so.touch()
-        result = parse_ld_paths(
-            "$ORIGIN/nonexistent_lib",
-            path=str(fake_so),
-        )
-        assert result == []

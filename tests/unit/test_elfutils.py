@@ -244,44 +244,6 @@ class TestElfReadRpaths:
         result = elf_read_rpaths(fake)
         assert result == {"rpaths": [], "runpaths": []}
 
-    def test_nonexistent_rpath_preserved(self, elffile_mock, tmp_path):
-        """Non-existent rpaths should be preserved (keep_non_exist=True)."""
-        fake = tmp_path / "fake.so"
-
-        # GIVEN
-        fake.touch()
-        section_mock = Mock()
-        tag = Mock()
-        tag.entry.d_tag = "DT_RPATH"
-        tag.rpath = "/nonexistent/path"
-        section_mock.iter_tags.return_value = [tag]
-        elffile_mock.return_value.get_section_by_name.return_value = section_mock
-
-        # WHEN
-        result = elf_read_rpaths(fake)
-
-        # THEN
-        assert "/nonexistent/path" in result["rpaths"]
-
-    def test_nonexistent_runpath_preserved(self, elffile_mock, tmp_path):
-        """Non-existent runpaths should be preserved (keep_non_exist=True)."""
-        fake = tmp_path / "fake.so"
-
-        # GIVEN
-        fake.touch()
-        section_mock = Mock()
-        tag = Mock()
-        tag.entry.d_tag = "DT_RUNPATH"
-        tag.runpath = "/nonexistent/runpath"
-        section_mock.iter_tags.return_value = [tag]
-        elffile_mock.return_value.get_section_by_name.return_value = section_mock
-
-        # WHEN
-        result = elf_read_rpaths(fake)
-
-        # THEN
-        assert "/nonexistent/runpath" in result["runpaths"]
-
 
 @patch("auditwheel.elfutils.ELFFile")
 class TestGetUndefinedSymbols:

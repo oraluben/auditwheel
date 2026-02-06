@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import json
 import os
+import subprocess
 import sys
 import zipfile
 from argparse import Namespace
@@ -275,3 +276,50 @@ def test_weak_symbols_not_blacklisted() -> None:
     assert result.policies.libc == Libc.GLIBC
     assert result.policies.architecture == Architecture.x86_64
     assert result.overall_policy.name == "manylinux_2_17_x86_64"
+
+
+def test_copylib_sets_rpath_for_nonexistent_runpath(tmp_path: Path) -> None:
+    """Test that copylib sets rpath to $ORIGIN even when lib has a non-existent runpath.
+
+    Scenario from the issue:
+        a.so -> b.so -> c.so
+        b.so: runpath=<nonexist>
+
+    Previously, elf_read_rpaths filtered out non-existent paths, so copylib
+    would not call set_rpath on b.so, breaking c.so resolution at runtime.
+    """
+    from auditwheel.patcher import Patchelf
+    from auditwheel.repair import copylib
+
+    # Build a minimal shared library
+    c_file = tmp_path / "b.c"
+    c_file.write_text("int fb(void) { return 42; }\n")
+    src_path = tmp_path / "b.so"
+    subprocess.check_call(
+        ["gcc", "-shared", "-fPIC", "-o", str(src_path), str(c_file)],
+    )
+
+    # Set a non-existent runpath on b.so (simulating the issue scenario)
+    subprocess.check_call(
+        ["patchelf", "--set-rpath", "/nonexistent/path", str(src_path)],
+    )
+
+    # Verify the non-existent runpath is set
+    rpath_output = subprocess.check_output(
+        ["patchelf", "--print-rpath", str(src_path)],
+    ).decode().strip()
+    assert rpath_output == "/nonexistent/path"
+
+    # Call copylib (the actual production code)
+    dest_dir = tmp_path / "dest"
+    dest_dir.mkdir()
+    patcher = Patchelf()
+    copylib(src_path, dest_dir, patcher)
+
+    # Verify the copied library has rpath set to $ORIGIN
+    copied_libs = list(dest_dir.glob("*.so"))
+    assert len(copied_libs) == 1
+    new_rpath = subprocess.check_output(
+        ["patchelf", "--print-rpath", str(copied_libs[0])],
+    ).decode().strip()
+    assert new_rpath == "$ORIGIN"
