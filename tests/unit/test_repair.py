@@ -4,7 +4,7 @@ from pathlib import Path
 from unittest.mock import call, patch
 
 from auditwheel.patcher import Patchelf
-from auditwheel.repair import append_rpath_within_wheel
+from auditwheel.repair import append_rpath_within_wheel, copylib
 
 
 @patch("auditwheel.patcher._verify_patchelf")
@@ -115,3 +115,31 @@ class TestRepair:
 
         assert check_output.call_args_list == check_output_expected_args
         assert check_call.call_args_list == check_call_expected_args
+
+    def test_copylib_sets_rpath_for_nonempty_raw_rpath(
+        self,
+        check_call,
+        _check_output,
+        _,
+        tmp_path,
+    ):  # noqa: PT019
+        patcher = Patchelf()
+        src_path = tmp_path / "libb.so"
+        src_path.write_bytes(b"content")
+        dest_dir = tmp_path / "dest"
+        dest_dir.mkdir()
+
+        with patch("auditwheel.repair.elf_read_rpaths") as elf_read_rpaths:
+            elf_read_rpaths.return_value = {
+                "rpaths": [],
+                "runpaths": [],
+                "has_rpath": True,
+                "has_runpath": False,
+            }
+            copylib(src_path, dest_dir, patcher)
+
+        assert any(
+            call_args.args[0][:4]
+            == ["patchelf", "--force-rpath", "--set-rpath", "$ORIGIN"]
+            for call_args in check_call.call_args_list
+        )
