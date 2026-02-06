@@ -122,7 +122,7 @@ class TestRepair:
         _check_output,
         _verify_patchelf,
         tmp_path,
-    ):  # noqa: PT019
+    ):  # noqa: PT019 - patched args supplied by class decorators
         patcher = Patchelf()
         src_path = tmp_path / "libb.so"
         src_path.write_bytes(b"content")
