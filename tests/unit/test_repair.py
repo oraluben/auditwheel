@@ -122,7 +122,7 @@ class TestRepair:
         _check_output,
         _verify_patchelf,
         tmp_path,
-    ):  # noqa: PT019 - patched args are not pytest fixtures
+    ):
         patcher = Patchelf()
         src_path = tmp_path / "libb.so"
         src_path.write_bytes(b"content")
@@ -141,7 +141,6 @@ class TestRepair:
         assert dest_path.exists()
         assert dest_path == dest_dir / new_soname
         assert any(
-            call_args.args[0][:4]
-            == ["patchelf", "--force-rpath", "--set-rpath", "$ORIGIN"]
+            call_args.args[0][:4] == ["patchelf", "--force-rpath", "--set-rpath", "$ORIGIN"]
             for call_args in check_call.call_args_list
         )
