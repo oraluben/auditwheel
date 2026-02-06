@@ -116,7 +116,7 @@ class TestRepair:
         assert check_output.call_args_list == check_output_expected_args
         assert check_call.call_args_list == check_call_expected_args
 
-    def test_copylib_sets_rpath_for_nonempty_raw_rpath(
+    def test_copylib_sets_rpath_when_rpath_tag_exists(
         self,
         check_call,
         _check_output,
