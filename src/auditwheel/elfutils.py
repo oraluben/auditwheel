@@ -121,14 +121,14 @@ def elf_read_rpaths(fn: Path) -> dict[str, list[str]]:
                     t.rpath,
                     root="/",
                     path=str(fn),
-                    keep_non_exist=True,
+                    keep_non_exist=False,
                 )
             elif t.entry.d_tag == "DT_RUNPATH":
                 result["runpaths"] = parse_ld_paths(
                     t.runpath,
                     root="/",
                     path=str(fn),
-                    keep_non_exist=True,
+                    keep_non_exist=False,
                 )
 
     return result
